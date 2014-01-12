@@ -13,11 +13,10 @@ import Control.Concurrent.STM.TVar
 
 type Account = TVar Int
 
-{-debit :: Account -> Int -> STM ()-}
-{-debit account amount = do-}
-    {-balance <- readTVar account-}
-    {-[>check (amount <=0 || amount <= balance)<]-}
-    {-writeTVar account (balance - amount)-}
+debit :: Account -> Int -> STM ()
+debit account amount = do
+    balance <- readTVar account
+    writeTVar account (balance - amount)
 
 {-credit account amount = do-}
     {-debit account (- amount)-}
@@ -34,7 +33,7 @@ type Account = TVar Int
     {-atomically $ debit checking 5-}
     {-showAccount checking-}
 
-{-balance :: Account -> IO Int-}
+balance :: Account -> IO Int
 balance account = readTVarIO account
 
 
@@ -46,5 +45,10 @@ prop_newAccountHasInitialBalance x = monadicIO $ do
   balance <- run $ balance checking
   assert $ x == balance
 
+prop_debitChangesTheBalance x debitAmount = monadicIO $ do
+  checking <- run $ newAccount x
+  run $ atomically $ debit checking debitAmount
+  balance <- run $ balance checking
+  assert $ x - debitAmount == balance
 
 
